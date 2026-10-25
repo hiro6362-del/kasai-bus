@@ -1,2 +1,2 @@
-{"name":"葛西トラックターミナル周辺バス","short_name":"葛西バス","start_url":"./","scope":"./","display":"standalone","background_color":"#f3f6f4","theme_color":"#0a7a4f","lang":"ja",
+{"id":"./kasai-bus-app","name":"葛西トラックターミナル周辺バス","short_name":"葛西バス","start_url":"./index.html","scope":"./","display":"standalone","background_color":"#f3f6f4","theme_color":"#0a7a4f","lang":"ja",
 "icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"}]}
