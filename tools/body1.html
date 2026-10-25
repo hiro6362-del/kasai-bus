@@ -1,0 +1,43 @@
+<div class="wrap">
+<header>
+  <div>
+    <h1>葛西トラックターミナル周辺から乗れる都営バス</h1>
+    <p class="sub">葛西駅・西葛西駅・中葛西五丁目へ向かう便を、今の時刻以降で表示します</p>
+  </div>
+  <div class="clock" id="clock">--:--<small id="daylabel">-</small></div>
+</header>
+<div class="controls">
+  <div class="row" role="group" aria-label="行き先">
+    <span class="lbl">行き先</span>
+    <button class="chip" data-dest="all" aria-pressed="true" id="d-all">すべて</button>
+    <button class="chip" data-dest="kasai" aria-pressed="false" id="d-kasai">葛西駅</button>
+    <button class="chip" data-dest="nishi" aria-pressed="false" id="d-nishi">西葛西駅</button>
+    <button class="chip" data-dest="naka" aria-pressed="false" id="d-naka">中葛西五丁目</button>
+  </div>
+  <div class="row" role="group" aria-label="ダイヤ">
+    <span class="lbl">ダイヤ</span>
+    <button class="chip" data-day="auto" aria-pressed="true" id="w-auto">自動</button>
+    <button class="chip" data-day="wd" aria-pressed="false" id="w-wd">平日</button>
+    <button class="chip" data-day="sa" aria-pressed="false" id="w-sa">土曜</button>
+    <button class="chip" data-day="ho" aria-pressed="false" id="w-ho">日曜・休日</button>
+  </div>
+</div>
+<div class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-view="time" aria-selected="true" id="tab-time">時間順</button>
+  <button role="tab" data-view="stops" aria-selected="false" id="tab-stops">バス停ごと</button>
+</div>
+<div id="banner" class="banner" hidden></div>
+<div id="view"></div>
+<section class="note">
+  <strong>このページについて</strong>
+  <ul>
+    <li>時刻は<a href="https://tobus.jp/sp/blsys" target="_blank" rel="noopener">都営バス公式の停留所時刻表</a>(tobus.jp)から2026年10月25日に書き写したものです。改正日は系統ごとに2023年4月〜2026年6月。ダイヤ改正があると古くなるので、気になる便は公式で確認してください。</li>
+    <li>表示はバス停を出る予定時刻です。道路状況で遅れることがあります。リアルタイムの接近情報は各バス停の「接近情報」から公式ページへ。</li>
+    <li>同じバスが近くの複数のバス停に止まるので、時間順の一覧では1〜2分違いで同じ系統が並ぶことがあります。</li>
+    <li>「自動」は日曜と祝日を休日ダイヤ、土曜を土曜ダイヤにします。年末年始など特別ダイヤの日は手動で切り替えてください。</li>
+    <li>葛西駅へは「葛西駅前」、西葛西駅へは「西葛西駅前」、中葛西五丁目は同名の停留所を通る便です。亀29は葛西駅前ではなく「葛西駅通り」を通ります。西葛27(臨海町二丁目団地行)は西葛西駅に向かわないので除いています。</li>
+  </ul>
+</section>
+</div>
+<script>
+const DATA=

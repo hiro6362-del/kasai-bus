@@ -1,0 +1,64 @@
+<title>葛西トラックターミナル周辺バス</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@700&display=swap">
+<style>
+/* Layout: 発車標(departure board)風。上に時刻と行き先フィルタ、下に停留所ごとのカード */
+:root{
+  --bg:#f3f6f4; --surface:#ffffff; --fg:#17231d; --muted:#5d6b64; --line:#d9e2dd;
+  --accent:#0a7a4f; --accent-soft:#e1f1e9; --warn:#b4540a; --led:#0a7a4f;
+  --c-kasai:#1d5fae; --c-nishi:#0a7a4f; --c-naka:#9a4a12;
+  --c-kasai-bg:#e3ecf8; --c-nishi-bg:#e1f1e9; --c-naka-bg:#f7e9dc;
+  --font-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --font-num:"BIZ UDGothic","Hiragino Sans","Noto Sans JP",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1512; --surface:#18211c; --fg:#e6eee9; --muted:#9aaba2; --line:#2a362f;
+  --accent:#3fc48a; --accent-soft:#183a2a; --warn:#f0a35c; --led:#57d99c;
+  --c-kasai:#8db8f0; --c-nishi:#6fd8a6; --c-naka:#f0b07a;
+  --c-kasai-bg:#1b2a40; --c-nishi-bg:#183a2a; --c-naka-bg:#3a2717; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1512; --surface:#18211c; --fg:#e6eee9; --muted:#9aaba2; --line:#2a362f;
+  --accent:#3fc48a; --accent-soft:#183a2a; --warn:#f0a35c; --led:#57d99c;
+  --c-kasai:#8db8f0; --c-nishi:#6fd8a6; --c-naka:#f0b07a;
+  --c-kasai-bg:#1b2a40; --c-nishi-bg:#183a2a; --c-naka-bg:#3a2717; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-size:1.35rem;margin:0;text-wrap:balance;line-height:1.3}
+.sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
+.clock{font-family:var(--font-num);font-size:2.4rem;line-height:1;color:var(--led);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.clock small{display:block;font-family:var(--font-body);font-size:.8rem;color:var(--muted);text-align:right;margin-top:4px;letter-spacing:0}
+.controls{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row .lbl{font-size:.75rem;color:var(--muted);letter-spacing:.06em;min-width:4.5em}
+button.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);
+  padding:6px 12px;border-radius:999px;cursor:pointer}
+button.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:700}
+button.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.card h2{font-size:1rem;margin:0;flex-wrap:wrap;padding:12px 14px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.card h2 span{font-size:.75rem;color:var(--muted);font-weight:400}
+.dep{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center}
+.dep:last-child{border-bottom:0}
+.dep .t{font-family:var(--font-num);font-size:1.45rem;font-variant-numeric:tabular-nums;grid-row:span 2}
+.dep .r{font-weight:700;font-size:.95rem;min-width:0}
+.dep .r b{display:inline-block;font-size:.78rem;border:1px solid currentColor;border-radius:4px;padding:0 5px;margin-right:6px;color:var(--accent)}
+.dep .in{font-family:var(--font-num);font-size:.95rem;text-align:right;grid-row:span 2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dep .in.soon{color:var(--warn)}
+.dep .meta{font-size:.78rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;min-width:0}
+.pill{font-size:.72rem;padding:1px 7px;border-radius:999px;font-weight:700;white-space:nowrap}
+.p-kasai{color:var(--c-kasai);background:var(--c-kasai-bg)}
+.p-nishi{color:var(--c-nishi);background:var(--c-nishi-bg)}
+.p-naka{color:var(--c-naka);background:var(--c-naka-bg)}
+.empty{padding:14px;color:var(--muted);font-size:.9rem}
+.more{font:inherit;font-size:.85rem;background:none;border:0;border-top:1px solid var(--line);color:var(--accent);padding:10px;cursor:pointer;margin-top:auto}
+.more:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.note{font-size:.8rem;color:var(--muted);line-height:1.7;max-width:70ch}
+.note a{color:var(--accent)}
+.note ul{padding-left:1.2em;margin:6px 0}
+.banner{background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:.85rem}
+</style>

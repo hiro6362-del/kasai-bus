@@ -1,0 +1,122 @@
+;
+const ROUTES={
+  "175":{name:"臨海28-1",marks:{"":"一之江橋西詰行","ｲ":"一之江駅前行","ｶ":"葛西駅前行"},dest:["kasai"]},
+  "176":{name:"臨海28-2",marks:{"":"葛西駅前行","ｲ":"一之江駅前行"},dest:["kasai"]},
+  "194":{name:"臨海28-3",marks:{"":"葛西駅前行"},dest:["naka","kasai"]},
+  "76":{name:"葛西24",marks:{"":"船堀駅前行","ｶ":"葛西駅前行"},dest:["kasai"]},
+  "57":{name:"西葛20乙",marks:{"":"西葛西駅前行"},dest:["nishi"]},
+  "56":{name:"西葛20甲",marks:{"":"西葛西駅前行"},dest:["nishi"]},
+  "67":{name:"臨海22",marks:{"":"船堀駅前行"},dest:["nishi"]},
+  "87":{name:"両28",marks:{"":"両国駅前行","ｶ":"亀戸駅前行","ﾆ":"両国駅前行(日曹橋経由)"},dest:["nishi"]},
+  "80":{name:"西葛26",marks:{"":"船堀駅前行"},dest:["nishi"],note:"臨海町・清新町を回るので時間がかかります"},
+  "92":{name:"亀29",marks:{"":"亀戸駅前行"},dest:["naka","nishi"]}
+};
+const STOPS=[
+  {id:"2062",name:"葛西トラックターミナル"},
+  {id:"2145",name:"臨海町三丁目"},
+  {id:"2061",name:"中央卸売市場葛西市場前",short:"葛西市場前"},
+  {id:"2146",name:"中左近橋"},
+  {id:"1394",name:"堀江団地"}
+];
+const STOP=Object.fromEntries(STOPS.map(s=>[s.id,s]));
+const DEST={kasai:["葛西駅","p-kasai"],nishi:["西葛西駅","p-nishi"],naka:["中葛西五丁目","p-naka"]};
+const HOLI=new Set(["2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-20","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-07-20","2026-08-11","2026-09-21","2026-09-22","2026-09-23","2026-10-12","2026-11-03","2026-11-23",
+"2027-01-01","2027-01-11","2027-02-11","2027-02-23","2027-03-21","2027-03-22","2027-04-29","2027-05-03","2027-05-04","2027-05-05","2027-07-19","2027-08-11","2027-09-20","2027-09-23","2027-10-11","2027-11-03","2027-11-23"]);
+const DAYNAME={wd:"平日ダイヤ",sa:"土曜ダイヤ",ho:"休日ダイヤ"};
+let state={dest:"all",day:"auto",view:"time",stop:null,open:{},listAll:false};
+try{const s=JSON.parse(localStorage.getItem("kasai-bus")||"{}");if(s.dest)state.dest=s.dest;if(s.day)state.day=s.day;if(s.view)state.view=s.view;}catch(e){}
+function save(){try{localStorage.setItem("kasai-bus",JSON.stringify({dest:state.dest,day:state.day,view:state.view}))}catch(e){}}
+function tokyoNow(){
+  const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short",hourCycle:"h23"}).formatToParts(new Date());
+  const g=t=>p.find(x=>x.type===t).value;
+  return {date:`${g("year")}-${g("month")}-${g("day")}`,wd:g("weekday"),h:+g("hour"),m:+g("minute")};
+}
+function autoDay(n){if(HOLI.has(n.date)||n.wd==="Sun")return"ho";if(n.wd==="Sat")return"sa";return"wd";}
+const pad=x=>String(x).padStart(2,"0");
+const routesAt=id=>[...new Set(Object.keys(DATA).filter(k=>k.startsWith(id+"_")).map(k=>ROUTES[k.split("_")[1]].name))].join("・");
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+function departures(day,nowMin,stopId){
+  const out=[];
+  for(const [key,v] of Object.entries(DATA)){
+    const [sid,rid]=key.split("_");if(stopId&&sid!==stopId)continue;
+    const r=ROUTES[rid];if(state.dest!=="all"&&!r.dest.includes(state.dest))continue;
+    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin)out.push({t,r,mk,sid,pole:v.pole});
+  }
+  return out.sort((a,b)=>a.t-b.t||STOPS.findIndex(s=>s.id===a.sid)-STOPS.findIndex(s=>s.id===b.sid));
+}
+function depRow(d,nowMin,showStop){
+  const row=el("div","dep");const diff=d.t-nowMin;
+  const inTxt=diff===0?"まもなく":diff<60?`あと${diff}分`:`あと${Math.floor(diff/60)}時間${diff%60}分`;
+  const pills=d.r.dest.map(k=>`<span class="pill ${DEST[k][1]}">${DEST[k][0]}</span>`).join("");
+  const st=STOP[d.sid];
+  row.innerHTML=`<div class="t">${pad(Math.floor(d.t/60))}:${pad(d.t%60)}</div>
+    <div class="r"><b>${d.r.name}</b>${d.r.marks[d.mk]||d.r.marks[""]}</div>
+    <div class="in${diff<=5?" soon":""}">${inTxt}</div>
+    <div class="meta">${showStop?`<button class="stop" data-stop="${d.sid}">${st.short||st.name}</button>`:""}<span>${d.pole}番のりば</span>${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
+  return row;
+}
+function addRows(box,list,nowMin,showStop,hourHeads){
+  let lastH=-1;
+  for(const d of list){
+    const h=Math.floor(d.t/60);
+    if(hourHeads&&h!==lastH){box.appendChild(el("div","hour",`${pad(h)}時台`));lastH=h;}
+    box.appendChild(depRow(d,nowMin,showStop));
+  }
+}
+function approachLink(id){const a=el("a","more","接近情報(公式)");a.style.textAlign="center";a.style.textDecoration="none";
+  a.href=`https://tobus.jp/sp/blsys/approaching?stopcode=${id}`;a.target="_blank";a.rel="noopener";return a;}
+function render(){
+  const n=tokyoNow(),nowMin=n.h*60+n.m,day=state.day==="auto"?autoDay(n):state.day;
+  document.getElementById("clock").firstChild.nodeValue=`${pad(n.h)}:${pad(n.m)}`;
+  document.getElementById("daylabel").textContent=`${+n.date.slice(5,7)}月${+n.date.slice(8)}日 ・ ${DAYNAME[day]}${state.day==="auto"?"":"(手動)"}`;
+  document.querySelectorAll("[data-dest]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.dest===state.dest));
+  document.querySelectorAll("[data-day]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.day===state.day));
+  document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-selected",!state.stop&&b.dataset.view===state.view));
+  const view=document.getElementById("view");view.textContent="";
+  const all=departures(day,nowMin);
+  const bn=document.getElementById("banner");
+  if(!all.length){bn.hidden=false;bn.textContent="今日の運行はすべて終わりました。始発は朝5時台〜6時台です。";}else bn.hidden=true;
+
+  if(state.stop){
+    const st=STOP[state.stop];
+    const head=el("div","detail-head");
+    const back=el("button","back","← もどる");back.id="back";back.onclick=()=>{state.stop=null;render();window.scrollTo(0,0);};
+    head.appendChild(back);head.appendChild(el("h2",null,st.name));head.appendChild(el("span","routes",routesAt(st.id)));
+    view.appendChild(head);
+    const list=departures(day,nowMin,st.id);
+    const box=el("div","list");box.style.marginTop="12px";
+    if(!list.length)box.appendChild(el("div","empty","この条件で今日これから出る便はありません"));
+    addRows(box,list,nowMin,false,true);
+    box.appendChild(approachLink(st.id));
+    view.appendChild(box);return;
+  }
+  if(state.view==="time"){
+    const box=el("div","list");
+    const limit=state.listAll?all.length:20;
+    if(!all.length)box.appendChild(el("div","empty","この条件で今日これから出る便はありません"));
+    addRows(box,all.slice(0,limit),nowMin,true,true);
+    if(all.length>20){const b=el("button","more",state.listAll?"閉じる":`このあと全${all.length}本を見る`);b.id="more-all";
+      b.onclick=()=>{state.listAll=!state.listAll;render();};box.appendChild(b);}
+    view.appendChild(box);return;
+  }
+  const grid=el("div","grid");
+  for(const st of STOPS){
+    const deps=departures(day,nowMin,st.id);
+    const card=el("article","card");
+    const h=el("h2",null,`<button class="stop" data-stop="${st.id}">${st.name}</button><span>${routesAt(st.id)}</span>`);card.appendChild(h);
+    const limit=state.open[st.id]?deps.length:5;
+    if(!deps.length)card.appendChild(el("div","empty","この条件で今日これから出る便はありません"));
+    addRows(card,deps.slice(0,limit),nowMin,false,false);
+    if(deps.length>5){const b=el("button","more",state.open[st.id]?"閉じる":`このあと全${deps.length}本を見る`);b.id="more-"+st.id;
+      b.onclick=()=>{state.open[st.id]=!state.open[st.id];render();};card.appendChild(b);}
+    card.appendChild(approachLink(st.id));grid.appendChild(card);
+  }
+  view.appendChild(grid);
+}
+document.getElementById("view").addEventListener("click",e=>{const b=e.target.closest("button.stop");if(!b)return;state.stop=b.dataset.stop;render();window.scrollTo(0,0);});
+document.querySelectorAll("[data-dest]").forEach(b=>b.onclick=()=>{state.dest=b.dataset.dest;save();render();});
+document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{state.day=b.dataset.day;save();render();});
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;state.stop=null;save();render();});
+render();setInterval(render,20000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)render();});
+</script>
