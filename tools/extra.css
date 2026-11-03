@@ -14,4 +14,16 @@ button.stop::after{content:" ›"}
 button.back{font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer}
 button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hour{font-family:var(--font-num);font-size:.8rem;color:var(--muted);background:var(--bg);padding:4px 14px;border-bottom:1px solid var(--line);letter-spacing:.04em}
+.walkbox{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 14px}
+.walkbox summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:.92rem;list-style-position:inside}
+.walkbox summary span{font-weight:400;color:var(--muted);font-size:.8rem;margin-left:6px}
+.walkbox summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.walkhelp{font-size:.8rem;color:var(--muted);margin:0 0 10px}
+.walkset{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;padding-bottom:14px}
+.walkrow{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.walkrow .wname{flex:1;min-width:0}
+.walkrow input{width:4.5em;font:inherit;font-family:var(--font-num);font-size:1rem;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);text-align:right}
+.walkrow input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.walk{font-weight:700;color:var(--accent)}
+.walk.tight{color:var(--warn)}
 </style>

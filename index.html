@@ -88,6 +88,18 @@ button.stop::after{content:" ›"}
 button.back{font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px;cursor:pointer}
 button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hour{font-family:var(--font-num);font-size:.8rem;color:var(--muted);background:var(--bg);padding:4px 14px;border-bottom:1px solid var(--line);letter-spacing:.04em}
+.walkbox{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 14px}
+.walkbox summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:.92rem;list-style-position:inside}
+.walkbox summary span{font-weight:400;color:var(--muted);font-size:.8rem;margin-left:6px}
+.walkbox summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.walkhelp{font-size:.8rem;color:var(--muted);margin:0 0 10px}
+.walkset{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;padding-bottom:14px}
+.walkrow{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.walkrow .wname{flex:1;min-width:0}
+.walkrow input{width:4.5em;font:inherit;font-family:var(--font-num);font-size:1rem;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);text-align:right}
+.walkrow input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.walk{font-weight:700;color:var(--accent)}
+.walk.tight{color:var(--warn)}
 </style>
 </head>
 <body>
@@ -115,6 +127,11 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <button class="chip" data-day="ho" aria-pressed="false" id="w-ho">日曜・休日</button>
   </div>
 </div>
+<details class="walkbox" id="walkbox">
+  <summary>バス停までの徒歩時間 <span id="walksum">未設定</span></summary>
+  <p class="walkhelp">いる場所から各バス停まで歩く分数を入れると、歩いても間に合わない便は表示しません。空欄は0分(今すぐ乗れる)扱いです。設定はこのスマホに保存されます。</p>
+  <div id="walkset" class="walkset"></div>
+</details>
 <div class="tabs" role="tablist" id="tabs">
   <button role="tab" data-view="time" aria-selected="true" id="tab-time">時間順</button>
   <button role="tab" data-view="stops" aria-selected="false" id="tab-stops">バス停ごと</button>
@@ -127,6 +144,7 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <li>時刻は<a href="https://tobus.jp/sp/blsys" target="_blank" rel="noopener">都営バス公式の停留所時刻表</a>(tobus.jp)から2026年10月25日に書き写したものです。改正日は系統ごとに2023年4月〜2026年6月。ダイヤ改正があると古くなるので、気になる便は公式で確認してください。</li>
     <li>表示はバス停を出る予定時刻です。道路状況で遅れることがあります。リアルタイムの接近情報は各バス停の「接近情報」から公式ページへ。</li>
     <li>同じバスが近くの複数のバス停に止まるので、時間順の一覧では1〜2分違いで同じ系統が並ぶことがあります。</li>
+    <li>徒歩時間は自分で入れた分数で計算しています。信号待ちなども考えて少し多めに入れるのがおすすめです。</li>
     <li>「自動」は日曜と祝日を休日ダイヤ、土曜を土曜ダイヤにします。年末年始など特別ダイヤの日は手動で切り替えてください。</li>
     <li>葛西駅へは「葛西駅前」、西葛西駅へは「西葛西駅前」、中葛西五丁目は同名の停留所を通る便です。亀29は葛西駅前ではなく「葛西駅通り」を通ります。西葛27(臨海町二丁目団地行)は西葛西駅に向かわないので除いています。</li>
   </ul>
@@ -160,8 +178,11 @@ const DEST={kasai:["葛西駅","p-kasai"],nishi:["西葛西駅","p-nishi"],naka:
 const HOLI=new Set(["2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-20","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-07-20","2026-08-11","2026-09-21","2026-09-22","2026-09-23","2026-10-12","2026-11-03","2026-11-23",
 "2027-01-01","2027-01-11","2027-02-11","2027-02-23","2027-03-21","2027-03-22","2027-04-29","2027-05-03","2027-05-04","2027-05-05","2027-07-19","2027-08-11","2027-09-20","2027-09-23","2027-10-11","2027-11-03","2027-11-23"]);
 const DAYNAME={wd:"平日ダイヤ",sa:"土曜ダイヤ",ho:"休日ダイヤ"};
-let state={dest:"all",day:"auto",view:"time",stop:null,open:{},listAll:false};
+let state={dest:"all",day:"auto",view:"time",stop:null,open:{},listAll:false,walk:{}};
 try{const s=JSON.parse(localStorage.getItem("kasai-bus")||"{}");if(s.dest)state.dest=s.dest;if(s.day)state.day=s.day;if(s.view)state.view=s.view;}catch(e){}
+try{const w=JSON.parse(localStorage.getItem("kasai-bus-walk")||"{}");if(w&&typeof w==="object")state.walk=w;}catch(e){}
+const walkOf=id=>Math.max(0,Math.min(60,parseInt(state.walk[id],10)||0));
+function saveWalk(){try{localStorage.setItem("kasai-bus-walk",JSON.stringify(state.walk))}catch(e){}}
 function save(){try{localStorage.setItem("kasai-bus",JSON.stringify({dest:state.dest,day:state.day,view:state.view}))}catch(e){}}
 function tokyoNow(){
   const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short",hourCycle:"h23"}).formatToParts(new Date());
@@ -177,19 +198,21 @@ function departures(day,nowMin,stopId){
   for(const [key,v] of Object.entries(DATA)){
     const [sid,rid]=key.split("_");if(stopId&&sid!==stopId)continue;
     const r=ROUTES[rid];if(state.dest!=="all"&&!r.dest.includes(state.dest))continue;
-    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin)out.push({t,r,mk,sid,pole:v.pole});
+    const w=walkOf(sid);
+    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin+w)out.push({t,r,mk,sid,pole:v.pole});
   }
   return out.sort((a,b)=>a.t-b.t||STOPS.findIndex(s=>s.id===a.sid)-STOPS.findIndex(s=>s.id===b.sid));
 }
 function depRow(d,nowMin,showStop){
-  const row=el("div","dep");const diff=d.t-nowMin;
+  const row=el("div","dep");const diff=d.t-nowMin;const w=walkOf(d.sid),margin=diff-w,leave=d.t-w;
   const inTxt=diff===0?"まもなく":diff<60?`あと${diff}分`:`あと${Math.floor(diff/60)}時間${diff%60}分`;
+  const walkTxt=w?`<span class="walk${margin<=3?" tight":""}">徒歩${w}分・${margin===0?"今すぐ出発":`${pad(Math.floor(leave/60))}:${pad(leave%60)}までに出発`}</span>`:"";
   const pills=d.r.dest.map(k=>`<span class="pill ${DEST[k][1]}">${DEST[k][0]}</span>`).join("");
   const st=STOP[d.sid];
   row.innerHTML=`<div class="t">${pad(Math.floor(d.t/60))}:${pad(d.t%60)}</div>
     <div class="r"><b>${d.r.name}</b>${d.r.marks[d.mk]||d.r.marks[""]}</div>
-    <div class="in${diff<=5?" soon":""}">${inTxt}</div>
-    <div class="meta">${showStop?`<button class="stop" data-stop="${d.sid}">${st.short||st.name}</button>`:""}<span>${d.pole}番のりば</span>${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
+    <div class="in${margin<=5?" soon":""}">${inTxt}</div>
+    <div class="meta">${showStop?`<button class="stop" data-stop="${d.sid}">${st.short||st.name}</button>`:""}<span>${d.pole}番のりば</span>${walkTxt}${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
   return row;
 }
 function addRows(box,list,nowMin,showStop,hourHeads){
@@ -250,6 +273,20 @@ function render(){
   }
   view.appendChild(grid);
 }
+function renderWalk(){
+  const box=document.getElementById("walkset");box.textContent="";
+  for(const st of STOPS){
+    const row=el("label","walkrow");row.htmlFor="walk-"+st.id;
+    row.appendChild(el("span","wname",st.short||st.name));
+    const inp=document.createElement("input");inp.type="number";inp.min="0";inp.max="60";inp.step="1";inp.inputMode="numeric";inp.id="walk-"+st.id;
+    inp.value=walkOf(st.id)||"";inp.placeholder="0";
+    inp.addEventListener("change",()=>{const v=Math.max(0,Math.min(60,parseInt(inp.value,10)||0));if(v)state.walk[st.id]=v;else delete state.walk[st.id];inp.value=v||"";saveWalk();render();updateWalkSum();});
+    row.appendChild(inp);row.appendChild(el("span","wunit","分"));box.appendChild(row);
+  }
+  updateWalkSum();
+}
+function updateWalkSum(){const n=STOPS.filter(s=>walkOf(s.id)).length;document.getElementById("walksum").textContent=n?`${n}か所設定中`:"未設定";}
+renderWalk();
 document.getElementById("view").addEventListener("click",e=>{const b=e.target.closest("button.stop");if(!b)return;state.stop=b.dataset.stop;render();window.scrollTo(0,0);});
 document.querySelectorAll("[data-dest]").forEach(b=>b.onclick=()=>{state.dest=b.dataset.dest;save();render();});
 document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{state.day=b.dataset.day;save();render();});

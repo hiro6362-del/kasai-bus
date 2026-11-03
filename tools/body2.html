@@ -23,8 +23,11 @@ const DEST={kasai:["葛西駅","p-kasai"],nishi:["西葛西駅","p-nishi"],naka:
 const HOLI=new Set(["2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-20","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-07-20","2026-08-11","2026-09-21","2026-09-22","2026-09-23","2026-10-12","2026-11-03","2026-11-23",
 "2027-01-01","2027-01-11","2027-02-11","2027-02-23","2027-03-21","2027-03-22","2027-04-29","2027-05-03","2027-05-04","2027-05-05","2027-07-19","2027-08-11","2027-09-20","2027-09-23","2027-10-11","2027-11-03","2027-11-23"]);
 const DAYNAME={wd:"平日ダイヤ",sa:"土曜ダイヤ",ho:"休日ダイヤ"};
-let state={dest:"all",day:"auto",view:"time",stop:null,open:{},listAll:false};
+let state={dest:"all",day:"auto",view:"time",stop:null,open:{},listAll:false,walk:{}};
 try{const s=JSON.parse(localStorage.getItem("kasai-bus")||"{}");if(s.dest)state.dest=s.dest;if(s.day)state.day=s.day;if(s.view)state.view=s.view;}catch(e){}
+try{const w=JSON.parse(localStorage.getItem("kasai-bus-walk")||"{}");if(w&&typeof w==="object")state.walk=w;}catch(e){}
+const walkOf=id=>Math.max(0,Math.min(60,parseInt(state.walk[id],10)||0));
+function saveWalk(){try{localStorage.setItem("kasai-bus-walk",JSON.stringify(state.walk))}catch(e){}}
 function save(){try{localStorage.setItem("kasai-bus",JSON.stringify({dest:state.dest,day:state.day,view:state.view}))}catch(e){}}
 function tokyoNow(){
   const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short",hourCycle:"h23"}).formatToParts(new Date());
@@ -40,19 +43,21 @@ function departures(day,nowMin,stopId){
   for(const [key,v] of Object.entries(DATA)){
     const [sid,rid]=key.split("_");if(stopId&&sid!==stopId)continue;
     const r=ROUTES[rid];if(state.dest!=="all"&&!r.dest.includes(state.dest))continue;
-    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin)out.push({t,r,mk,sid,pole:v.pole});
+    const w=walkOf(sid);
+    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin+w)out.push({t,r,mk,sid,pole:v.pole});
   }
   return out.sort((a,b)=>a.t-b.t||STOPS.findIndex(s=>s.id===a.sid)-STOPS.findIndex(s=>s.id===b.sid));
 }
 function depRow(d,nowMin,showStop){
-  const row=el("div","dep");const diff=d.t-nowMin;
+  const row=el("div","dep");const diff=d.t-nowMin;const w=walkOf(d.sid),margin=diff-w,leave=d.t-w;
   const inTxt=diff===0?"まもなく":diff<60?`あと${diff}分`:`あと${Math.floor(diff/60)}時間${diff%60}分`;
+  const walkTxt=w?`<span class="walk${margin<=3?" tight":""}">徒歩${w}分・${margin===0?"今すぐ出発":`${pad(Math.floor(leave/60))}:${pad(leave%60)}までに出発`}</span>`:"";
   const pills=d.r.dest.map(k=>`<span class="pill ${DEST[k][1]}">${DEST[k][0]}</span>`).join("");
   const st=STOP[d.sid];
   row.innerHTML=`<div class="t">${pad(Math.floor(d.t/60))}:${pad(d.t%60)}</div>
     <div class="r"><b>${d.r.name}</b>${d.r.marks[d.mk]||d.r.marks[""]}</div>
-    <div class="in${diff<=5?" soon":""}">${inTxt}</div>
-    <div class="meta">${showStop?`<button class="stop" data-stop="${d.sid}">${st.short||st.name}</button>`:""}<span>${d.pole}番のりば</span>${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
+    <div class="in${margin<=5?" soon":""}">${inTxt}</div>
+    <div class="meta">${showStop?`<button class="stop" data-stop="${d.sid}">${st.short||st.name}</button>`:""}<span>${d.pole}番のりば</span>${walkTxt}${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
   return row;
 }
 function addRows(box,list,nowMin,showStop,hourHeads){
@@ -113,6 +118,20 @@ function render(){
   }
   view.appendChild(grid);
 }
+function renderWalk(){
+  const box=document.getElementById("walkset");box.textContent="";
+  for(const st of STOPS){
+    const row=el("label","walkrow");row.htmlFor="walk-"+st.id;
+    row.appendChild(el("span","wname",st.short||st.name));
+    const inp=document.createElement("input");inp.type="number";inp.min="0";inp.max="60";inp.step="1";inp.inputMode="numeric";inp.id="walk-"+st.id;
+    inp.value=walkOf(st.id)||"";inp.placeholder="0";
+    inp.addEventListener("change",()=>{const v=Math.max(0,Math.min(60,parseInt(inp.value,10)||0));if(v)state.walk[st.id]=v;else delete state.walk[st.id];inp.value=v||"";saveWalk();render();updateWalkSum();});
+    row.appendChild(inp);row.appendChild(el("span","wunit","分"));box.appendChild(row);
+  }
+  updateWalkSum();
+}
+function updateWalkSum(){const n=STOPS.filter(s=>walkOf(s.id)).length;document.getElementById("walksum").textContent=n?`${n}か所設定中`:"未設定";}
+renderWalk();
 document.getElementById("view").addEventListener("click",e=>{const b=e.target.closest("button.stop");if(!b)return;state.stop=b.dataset.stop;render();window.scrollTo(0,0);});
 document.querySelectorAll("[data-dest]").forEach(b=>b.onclick=()=>{state.dest=b.dataset.dest;save();render();});
 document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{state.day=b.dataset.day;save();render();});

@@ -22,6 +22,11 @@
     <button class="chip" data-day="ho" aria-pressed="false" id="w-ho">日曜・休日</button>
   </div>
 </div>
+<details class="walkbox" id="walkbox">
+  <summary>バス停までの徒歩時間 <span id="walksum">未設定</span></summary>
+  <p class="walkhelp">いる場所から各バス停まで歩く分数を入れると、歩いても間に合わない便は表示しません。空欄は0分(今すぐ乗れる)扱いです。設定はこのスマホに保存されます。</p>
+  <div id="walkset" class="walkset"></div>
+</details>
 <div class="tabs" role="tablist" id="tabs">
   <button role="tab" data-view="time" aria-selected="true" id="tab-time">時間順</button>
   <button role="tab" data-view="stops" aria-selected="false" id="tab-stops">バス停ごと</button>
@@ -34,6 +39,7 @@
     <li>時刻は<a href="https://tobus.jp/sp/blsys" target="_blank" rel="noopener">都営バス公式の停留所時刻表</a>(tobus.jp)から2026年10月25日に書き写したものです。改正日は系統ごとに2023年4月〜2026年6月。ダイヤ改正があると古くなるので、気になる便は公式で確認してください。</li>
     <li>表示はバス停を出る予定時刻です。道路状況で遅れることがあります。リアルタイムの接近情報は各バス停の「接近情報」から公式ページへ。</li>
     <li>同じバスが近くの複数のバス停に止まるので、時間順の一覧では1〜2分違いで同じ系統が並ぶことがあります。</li>
+    <li>徒歩時間は自分で入れた分数で計算しています。信号待ちなども考えて少し多めに入れるのがおすすめです。</li>
     <li>「自動」は日曜と祝日を休日ダイヤ、土曜を土曜ダイヤにします。年末年始など特別ダイヤの日は手動で切り替えてください。</li>
     <li>葛西駅へは「葛西駅前」、西葛西駅へは「西葛西駅前」、中葛西五丁目は同名の停留所を通る便です。亀29は葛西駅前ではなく「葛西駅通り」を通ります。西葛27(臨海町二丁目団地行)は西葛西駅に向かわないので除いています。</li>
   </ul>
