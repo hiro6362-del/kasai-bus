@@ -26,4 +26,7 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .walkrow input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .walk{font-weight:700;color:var(--accent)}
 .walk.tight{color:var(--warn)}
+.walk.late{color:var(--muted)}
+.dep.miss{opacity:.45}
+.dep.miss .r b{color:var(--muted)}
 </style>

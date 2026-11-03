@@ -90,6 +90,9 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .walkrow input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .walk{font-weight:700;color:var(--accent)}
 .walk.tight{color:var(--warn)}
+.walk.late{color:var(--muted)}
+.dep.miss{opacity:.45}
+.dep.miss .r b{color:var(--muted)}
 </style>
 <div class="wrap">
 <header>
@@ -117,7 +120,7 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </div>
 <details class="walkbox" id="walkbox">
   <summary>バス停までの徒歩時間 <span id="walksum">未設定</span></summary>
-  <p class="walkhelp">いる場所から各バス停まで歩く分数を入れると、歩いても間に合わない便は表示しません。空欄は0分(今すぐ乗れる)扱いです。設定はこのスマホに保存されます。</p>
+  <p class="walkhelp">いる場所から各バス停まで歩く分数を入れると、歩いても間に合わない便はグレーで表示します。空欄は0分(今すぐ乗れる)扱いです。設定はこのスマホに保存されます。</p>
   <div id="walkset" class="walkset"></div>
 </details>
 <div class="tabs" role="tablist" id="tabs">
@@ -187,19 +190,19 @@ function departures(day,nowMin,stopId){
     const [sid,rid]=key.split("_");if(stopId&&sid!==stopId)continue;
     const r=ROUTES[rid];if(state.dest!=="all"&&!r.dest.includes(state.dest))continue;
     const w=walkOf(sid);
-    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin+w)out.push({t,r,mk,sid,pole:v.pole});
+    for(const [t,mk] of (v.t[day]||[]))if(t>=nowMin)out.push({t,r,mk,sid,pole:v.pole,miss:t<nowMin+w});
   }
   return out.sort((a,b)=>a.t-b.t||STOPS.findIndex(s=>s.id===a.sid)-STOPS.findIndex(s=>s.id===b.sid));
 }
 function depRow(d,nowMin,showStop){
-  const row=el("div","dep");const diff=d.t-nowMin;const w=walkOf(d.sid),margin=diff-w,leave=d.t-w;
+  const row=el("div",d.miss?"dep miss":"dep");const diff=d.t-nowMin;const w=walkOf(d.sid),margin=diff-w,leave=d.t-w;
   const inTxt=diff===0?"まもなく":diff<60?`あと${diff}分`:`あと${Math.floor(diff/60)}時間${diff%60}分`;
-  const walkTxt=w?`<span class="walk${margin<=3?" tight":""}">徒歩${w}分・${margin===0?"今すぐ出発":`${pad(Math.floor(leave/60))}:${pad(leave%60)}までに出発`}</span>`:"";
+  const walkTxt=d.miss?`<span class="walk late">徒歩${w}分・間に合わない</span>`:w?`<span class="walk${margin<=3?" tight":""}">徒歩${w}分・${margin===0?"今すぐ出発":`${pad(Math.floor(leave/60))}:${pad(leave%60)}までに出発`}</span>`:"";
   const pills=d.r.dest.map(k=>`<span class="pill ${DEST[k][1]}">${DEST[k][0]}</span>`).join("");
   const st=STOP[d.sid];
   row.innerHTML=`<div class="t">${pad(Math.floor(d.t/60))}:${pad(d.t%60)}</div>
     <div class="r"><b>${d.r.name}</b>${d.r.marks[d.mk]||d.r.marks[""]}</div>
-    <div class="in${margin<=5?" soon":""}">${inTxt}</div>
+    <div class="in${!d.miss&&margin<=5?" soon":""}">${inTxt}</div>
     <div class="meta">${showStop?`<button class="stop" data-stop="${d.sid}">${st.short||st.name}</button>`:""}<span>${d.pole}番のりば</span>${walkTxt}${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
   return row;
 }
