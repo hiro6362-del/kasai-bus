@@ -98,7 +98,18 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dep .st,.dep .r,.dep .meta{grid-column:2}
 .dep.withstop .t,.dep.withstop .in{grid-row:1 / span 3}
 .dep .st{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
-.dep .st button.stop{white-space:nowrap;font-size:.95rem;padding:3px 10px;background:var(--accent);color:var(--surface);border-radius:6px}
+.sc-green{--sc:#0a7a4f}.sc-blue{--sc:#1d5fae}.sc-teal{--sc:#0b7285}.sc-purple{--sc:#6b3fa0}.sc-pink{--sc:#b8336a}.sc-red{--sc:#c0392b}.sc-orange{--sc:#b4540a}.sc-brown{--sc:#7a5230}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sc-green{--sc:#3fc48a}:root:not([data-theme="light"]) .sc-blue{--sc:#8db8f0}:root:not([data-theme="light"]) .sc-teal{--sc:#5fd0e0}:root:not([data-theme="light"]) .sc-purple{--sc:#c3a2f0}:root:not([data-theme="light"]) .sc-pink{--sc:#f39ac0}:root:not([data-theme="light"]) .sc-red{--sc:#f08a80}:root:not([data-theme="light"]) .sc-orange{--sc:#f0a35c}:root:not([data-theme="light"]) .sc-brown{--sc:#d4a87a}}
+:root[data-theme="dark"] .sc-green{--sc:#3fc48a}:root[data-theme="dark"] .sc-blue{--sc:#8db8f0}:root[data-theme="dark"] .sc-teal{--sc:#5fd0e0}:root[data-theme="dark"] .sc-purple{--sc:#c3a2f0}:root[data-theme="dark"] .sc-pink{--sc:#f39ac0}:root[data-theme="dark"] .sc-red{--sc:#f08a80}:root[data-theme="dark"] .sc-orange{--sc:#f0a35c}:root[data-theme="dark"] .sc-brown{--sc:#d4a87a}
+button.stop.big,.stoplabel{white-space:nowrap;font-size:.95rem;font-weight:700;padding:3px 10px;background:var(--sc,var(--accent));color:var(--surface);border-radius:6px}
+.card h2 button.stop.big{font-size:1rem;padding:4px 12px}
+.detail-head h2 .stoplabel{font-size:1.1rem;padding:4px 12px}
+.walkrow .stoplabel{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;padding:2px 8px;margin-right:auto}
+.stopset{display:flex;flex-direction:column;gap:6px}
+.swatches{display:flex;flex-wrap:wrap;gap:6px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);background:var(--sc);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.sw[aria-checked="true"]{box-shadow:0 0 0 2px var(--fg)}
+.sw:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .dep .st .pole{font-size:.8rem;font-weight:700;color:var(--fg)}
 .dep.miss .st button.stop{background:var(--muted)}
 </style>
@@ -127,8 +138,8 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   </div>
 </div>
 <details class="walkbox" id="walkbox">
-  <summary>バス停までの徒歩時間 <span id="walksum">未設定</span></summary>
-  <p class="walkhelp">いる場所から各バス停まで歩く分数を入れると、歩いても間に合わない便はグレーで表示します。空欄は0分(今すぐ乗れる)扱いです。設定はこのスマホに保存されます。</p>
+  <summary>バス停の設定(徒歩時間・色) <span id="walksum">未設定</span></summary>
+  <p class="walkhelp">いる場所から各バス停まで歩く分数を入れると、歩いても間に合わない便はグレーで表示します。空欄は0分(今すぐ乗れる)扱いです。下の丸を押すとバス停の色を変えられます。設定はこのスマホに保存されます。</p>
   <div id="walkset" class="walkset"></div>
 </details>
 <div class="tabs" role="tablist" id="tabs">
@@ -173,6 +184,12 @@ const STOPS=[
   {id:"2146",name:"中左近橋"}
 ];
 const STOP=Object.fromEntries(STOPS.map(s=>[s.id,s]));
+const COLORS=[["green","緑"],["blue","青"],["teal","水色"],["purple","紫"],["pink","ピンク"],["red","赤"],["orange","オレンジ"],["brown","茶"]];
+let stopColor={};
+try{const c=JSON.parse(localStorage.getItem("kasai-bus-color")||"{}");if(c&&typeof c==="object")stopColor=c;}catch(e){}
+const colorOf=id=>COLORS.some(c=>c[0]===stopColor[id])?stopColor[id]:"green";
+function saveColor(){try{localStorage.setItem("kasai-bus-color",JSON.stringify(stopColor))}catch(e){}}
+const stopBtn=(id,label)=>`<button class="stop big sc-${colorOf(id)}" data-stop="${id}">${label}</button>`;
 const DEST={kasai:["葛西駅","p-kasai"],nishi:["西葛西駅","p-nishi"],naka:["中葛西五丁目","p-naka"]};
 const HOLI=new Set(["2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-20","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-07-20","2026-08-11","2026-09-21","2026-09-22","2026-09-23","2026-10-12","2026-11-03","2026-11-23",
 "2027-01-01","2027-01-11","2027-02-11","2027-02-23","2027-03-21","2027-03-22","2027-04-29","2027-05-03","2027-05-04","2027-05-05","2027-07-19","2027-08-11","2027-09-20","2027-09-23","2027-10-11","2027-11-03","2027-11-23"]);
@@ -209,7 +226,7 @@ function depRow(d,nowMin,showStop){
   const pills=d.r.dest.map(k=>`<span class="pill ${DEST[k][1]}">${DEST[k][0]}</span>`).join("");
   const st=STOP[d.sid];
   row.innerHTML=`<div class="t">${pad(Math.floor(d.t/60))}:${pad(d.t%60)}</div>
-    ${showStop?`<div class="st"><button class="stop" data-stop="${d.sid}">${st.short||st.name}</button><span class="pole">${d.pole}番のりば</span></div>`:""}<div class="r"><b>${d.r.name}</b>${d.r.marks[d.mk]||d.r.marks[""]}</div>
+    ${showStop?`<div class="st">${stopBtn(d.sid,st.short||st.name)}<span class="pole">${d.pole}番のりば</span></div>`:""}<div class="r"><b>${d.r.name}</b>${d.r.marks[d.mk]||d.r.marks[""]}</div>
     <div class="in${!d.miss&&margin<=5?" soon":""}">${inTxt}</div>
     <div class="meta">${showStop?"":`<span>${d.pole}番のりば</span>`}${walkTxt}${pills}${d.r.note?`<span>・${d.r.note}</span>`:""}</div>`;
   return row;
@@ -240,7 +257,7 @@ function render(){
     const st=STOP[state.stop];
     const head=el("div","detail-head");
     const back=el("button","back","← もどる");back.id="back";back.onclick=()=>{state.stop=null;render();window.scrollTo(0,0);};
-    head.appendChild(back);head.appendChild(el("h2",null,st.name));head.appendChild(el("span","routes",routesAt(st.id)));
+    head.appendChild(back);head.appendChild(el("h2",null,`<span class="stoplabel sc-${colorOf(st.id)}">${st.name}</span>`));head.appendChild(el("span","routes",routesAt(st.id)));
     view.appendChild(head);
     const list=departures(day,nowMin,st.id);
     const box=el("div","list");box.style.marginTop="12px";
@@ -262,7 +279,7 @@ function render(){
   for(const st of STOPS){
     const deps=departures(day,nowMin,st.id);
     const card=el("article","card");
-    const h=el("h2",null,`<button class="stop" data-stop="${st.id}">${st.name}</button><span>${routesAt(st.id)}</span>`);card.appendChild(h);
+    const h=el("h2",null,`${stopBtn(st.id,st.name)}<span>${routesAt(st.id)}</span>`);card.appendChild(h);
     const limit=state.open[st.id]?deps.length:5;
     if(!deps.length)card.appendChild(el("div","empty","この条件で今日これから出る便はありません"));
     addRows(card,deps.slice(0,limit),nowMin,false,false);
@@ -276,11 +293,17 @@ function renderWalk(){
   const box=document.getElementById("walkset");box.textContent="";
   for(const st of STOPS){
     const row=el("label","walkrow");row.htmlFor="walk-"+st.id;
-    row.appendChild(el("span","wname",st.short||st.name));
+    row.appendChild(el("span",`wname stoplabel sc-${colorOf(st.id)}`,st.short||st.name));
     const inp=document.createElement("input");inp.type="number";inp.min="0";inp.max="60";inp.step="1";inp.inputMode="numeric";inp.id="walk-"+st.id;
     inp.value=walkOf(st.id)||"";inp.placeholder="0";
     inp.addEventListener("change",()=>{const v=Math.max(0,Math.min(60,parseInt(inp.value,10)||0));if(v)state.walk[st.id]=v;else delete state.walk[st.id];inp.value=v||"";saveWalk();render();updateWalkSum();});
-    row.appendChild(inp);row.appendChild(el("span","wunit","分"));box.appendChild(row);
+    row.appendChild(inp);row.appendChild(el("span","wunit","分"));
+    const wrap=el("div","stopset");wrap.appendChild(row);
+    const sw=el("div","swatches");sw.setAttribute("role","radiogroup");sw.setAttribute("aria-label",(st.short||st.name)+"の色");
+    for(const [k,lbl] of COLORS){const b=el("button","sw sc-"+k);b.type="button";b.setAttribute("role","radio");b.title=lbl;b.setAttribute("aria-label",lbl);
+      b.setAttribute("aria-checked",colorOf(st.id)===k);
+      b.onclick=()=>{if(k==="green")delete stopColor[st.id];else stopColor[st.id]=k;saveColor();renderWalk();render();};sw.appendChild(b);}
+    wrap.appendChild(sw);box.appendChild(wrap);
   }
   updateWalkSum();
 }

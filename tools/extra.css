@@ -34,7 +34,18 @@ button.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dep .st,.dep .r,.dep .meta{grid-column:2}
 .dep.withstop .t,.dep.withstop .in{grid-row:1 / span 3}
 .dep .st{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
-.dep .st button.stop{white-space:nowrap;font-size:.95rem;padding:3px 10px;background:var(--accent);color:var(--surface);border-radius:6px}
+.sc-green{--sc:#0a7a4f}.sc-blue{--sc:#1d5fae}.sc-teal{--sc:#0b7285}.sc-purple{--sc:#6b3fa0}.sc-pink{--sc:#b8336a}.sc-red{--sc:#c0392b}.sc-orange{--sc:#b4540a}.sc-brown{--sc:#7a5230}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sc-green{--sc:#3fc48a}:root:not([data-theme="light"]) .sc-blue{--sc:#8db8f0}:root:not([data-theme="light"]) .sc-teal{--sc:#5fd0e0}:root:not([data-theme="light"]) .sc-purple{--sc:#c3a2f0}:root:not([data-theme="light"]) .sc-pink{--sc:#f39ac0}:root:not([data-theme="light"]) .sc-red{--sc:#f08a80}:root:not([data-theme="light"]) .sc-orange{--sc:#f0a35c}:root:not([data-theme="light"]) .sc-brown{--sc:#d4a87a}}
+:root[data-theme="dark"] .sc-green{--sc:#3fc48a}:root[data-theme="dark"] .sc-blue{--sc:#8db8f0}:root[data-theme="dark"] .sc-teal{--sc:#5fd0e0}:root[data-theme="dark"] .sc-purple{--sc:#c3a2f0}:root[data-theme="dark"] .sc-pink{--sc:#f39ac0}:root[data-theme="dark"] .sc-red{--sc:#f08a80}:root[data-theme="dark"] .sc-orange{--sc:#f0a35c}:root[data-theme="dark"] .sc-brown{--sc:#d4a87a}
+button.stop.big,.stoplabel{white-space:nowrap;font-size:.95rem;font-weight:700;padding:3px 10px;background:var(--sc,var(--accent));color:var(--surface);border-radius:6px}
+.card h2 button.stop.big{font-size:1rem;padding:4px 12px}
+.detail-head h2 .stoplabel{font-size:1.1rem;padding:4px 12px}
+.walkrow .stoplabel{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;padding:2px 8px;margin-right:auto}
+.stopset{display:flex;flex-direction:column;gap:6px}
+.swatches{display:flex;flex-wrap:wrap;gap:6px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);background:var(--sc);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.sw[aria-checked="true"]{box-shadow:0 0 0 2px var(--fg)}
+.sw:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .dep .st .pole{font-size:.8rem;font-weight:700;color:var(--fg)}
 .dep.miss .st button.stop{background:var(--muted)}
 </style>
